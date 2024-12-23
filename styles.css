@@ -18,13 +18,12 @@ body {
   
   .image-container img {
     position: absolute;
-    width: 60px;
-    border: 1px solid black; 
+    width: 70px;
+    border:4px ridge #9e9e9e; 
     box-shadow: 0 0 0 4px transparent; 
-    cursor: pointer;
-    transition: transform 0.2s ease;
     cursor: crosshair;
-  }
+    transition: transform 0.2s ease;
+}
   
   .image-container a {
     width: 100px;
