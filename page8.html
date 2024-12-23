@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>opensourcestone</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: hsl(0, 0%, 100%);
+    }
+
+    canvas {
+      border: 1px solid #000;
+      background-color: #fff;
+      cursor: crosshair;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: 1px solid black;
+      cursor: pointer;
+      background-color: #ffffff;
+      color: rgb(0, 0, 0);
+      transition: background-color 0.3s;
+    }
+
+    button.active {
+      background-color: #e0e0e0;
+    }
+
+    .text-box-container {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #user-text {
+      padding: 10px;
+      font-size: 14px;
+      width: 300px;
+      margin-right: 10px;
+      border: 1px solid black;
+    }
+
+    #submit-text:hover {
+      background-color: #e0e0e0;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      color: rgb(0, 0, 0);
+    }
+
+    .back-button:hover {
+        font-weight: bold; 
+    }
+
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-button">↩︎ 돌아가기</a>
+
+  <canvas id="canvas" width="700" height="400"></canvas>
+
+  <div class="button-container">
+    <button id="write-text">텍스트 남기기</button>
+    <button id="draw-picture">그림 그리기</button>
+    <button id="save-canvas">저장</button> 
+  </div>
+
+  <div class="text-box-container" id="text-box-container">
+    <input type="text" id="user-text" placeholder="텍스트를 입력하세요">
+    <button id="submit-text">입력</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = './img/main/8.jpg';
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+
+    let texts = [];
+    let draggingText = null;
+    let offsetX, offsetY;
+
+    let drawnLines = [];
+
+    document.getElementById('draw-picture').addEventListener('click', () => {
+      if (!isDrawing) {
+        isDrawing = true;
+        document.getElementById('draw-picture').classList.add('active');
+        document.getElementById('write-text').classList.remove('active');
+        document.getElementById('text-box-container').style.display = 'none';
+      } else {
+        isDrawing = false;
+        document.getElementById('draw-picture').classList.remove('active');
+      }
+    });
+
+    document.getElementById('write-text').addEventListener('click', () => {
+      if (!document.getElementById('write-text').classList.contains('active')) {
+        document.getElementById('write-text').classList.add('active');
+        document.getElementById('draw-picture').classList.remove('active');
+        isDrawing = false;
+      }
+      document.getElementById('text-box-container').style.display = 'block';
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (isDrawing) {
+        lastX = e.offsetX;
+        lastY = e.offsetY;
+        canvas.addEventListener('mousemove', draw);
+      } else {
+        draggingText = null;
+        for (let i = 0; i < texts.length; i++) {
+          const text = texts[i];
+          if (e.offsetX >= text.x && e.offsetX <= text.x + ctx.measureText(text.text).width &&
+              e.offsetY >= text.y - 20 && e.offsetY <= text.y) {
+            draggingText = text;
+            offsetX = e.offsetX - text.x;
+            offsetY = e.offsetY - text.y;
+            break;
+          }
+        }
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      canvas.removeEventListener('mousemove', draw);
+      draggingText = null;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (draggingText) {
+        draggingText.x = e.offsetX - offsetX;
+        draggingText.y = e.offsetY - offsetY;
+        redrawCanvas();
+      }
+    });
+
+    function draw(e) {
+      if (!isDrawing) return;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      drawnLines.push({ x1: lastX, y1: lastY, x2: e.offsetX, y2: e.offsetY });
+
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
+      lastX = e.offsetX;
+      lastY = e.offsetY;
+    }
+
+    document.getElementById('submit-text').addEventListener('click', () => {
+      const userText = document.getElementById('user-text').value;
+      if (userText) {
+        const textObject = {
+          text: userText,
+          x: canvas.width / 2 - ctx.measureText(userText).width / 2,
+          y: canvas.height / 2
+        };
+        texts.push(textObject);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(userText, textObject.x, textObject.y);
+
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(userText, textObject.x, textObject.y);
+
+        document.getElementById('user-text').value = '';
+        document.getElementById('text-box-container').style.display = 'none';
+      }
+    });
+
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      drawnLines.forEach(line => {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.stroke();
+      });
+      texts.forEach(text => {
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(text.text, text.x, text.y);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(text.text, text.x, text.y);
+      });
+    }
+
+    document.getElementById('save-canvas').addEventListener('click', () => {
+      const imageUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'canvas-image.png';
+      link.click();
+    });
+
+    
+  </script>
+</body>
+</html>
