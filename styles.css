@@ -19,7 +19,6 @@ body {
   .image-container img {
     position: absolute;
     width: 70px;
-    box-shadow: 0 0 0 4px transparent; 
     cursor: crosshair;
     transition: transform 0.2s ease;
 }
